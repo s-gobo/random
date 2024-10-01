@@ -36,23 +36,13 @@ let noise = {
     let dpul = this.dp(pul, this.memory[[l, u]]);
     let dpur = this.dp(pur, this.memory[[r, u]]);
     let dpdl = this.dp(pdl, this.memory[[l, d]]);
-    let dpdr = this.dp(pdr, this.memory[[r, d]])
-    // console.log(dpul, dpur);
+    let dpdr = this.dp(pdr, this.memory[[r, d]]);
     let reu = this.in(dpul, dpur, x - l);
     let red = this.in(dpdl, dpdr, x - l);
     let re = this.in(red, reu, y - d);
     return re;
   },
 };
-
-// for (let i = 0; i < 10; i += 0.05) {
-//   let count = 40 + Math.floor(noise.get(0, i) * 20)
-//   try {
-//     console.log("X".repeat(count));
-//   } catch {
-//     console.log(count);
-//   }
-// }
 
 let resolution = 1;
 let zoom = 1;
