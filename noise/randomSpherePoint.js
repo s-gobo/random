@@ -8,10 +8,9 @@ let randomSpherePoint = function() {
     dist = Math.sqrt(x ** 2 + y ** 2 + z ** 2);
   } while (dist > 1);
   //move the point away from the center
-  dist = 1 / dist;
-  x *= dist;
-  y *= dist;
-  z *= dist;
+  x /= dist;
+  y /= dist;
+  z /= dist;
   
   return {x: x, y: y, z: z};
 }
