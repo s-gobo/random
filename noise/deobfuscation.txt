@@ -1,0 +1,30 @@
+x = x axis
+y = y axis
+
+d = down  = negative y
+u = up    = positive y
+l = left  = negative x
+r = right = positive x
+
+i = iterator 1
+j = iterator 2
+
+vector.x = vector's x magnitude (i value)
+vector.y = vector's y magnitude (j value)
+
+p = displacement vector from point
+pul = p to u and l vertex
+pur = p to u and r vertex
+pdl = p to d and l vertex
+pdr = p to d and r vertex
+
+dp = dot product
+dpul = dp of pul and u and l vectors
+dpur = dp of pur and u and r vectors
+dpdl = dp of pdl and d and l vectors
+dpdr = dp of pdr and d and r vectors
+
+in = interpolation
+re = return
+reu = re u part = in of dpul and dpur
+red = re d part = in of dpdl and dpdr
