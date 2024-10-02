@@ -16,7 +16,7 @@ let noise = {
   }(),
   
   dp: function(v1, v2) {
-    return v1.x * v2.x + v1.y + v2.y;
+    return v1.x * v2.x + v1.y * v2.y;
   },
   
   in: function(a, b, wt) {
@@ -48,12 +48,12 @@ let resolution = 1;
 let zoom = 1;
 
 let renderKey = function(number) {
-  return number >= 1? "@":
-    number >= 0.6? "X":
-    number >= 0.2? "+":
-    number >= -0.2? "|":
-    number >= -0.6? "-":
-    number >= -1? ".":
+  return number >= 0.5? "@":
+    number >= 0.3? "X":
+    number >= 0.1? "+":
+    number >= -0.1? "|":
+    number >= -0.3? "-":
+    number >= -0.5? ".":
     " ";
 }
 
