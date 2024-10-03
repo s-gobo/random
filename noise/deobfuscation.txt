@@ -1,30 +1,50 @@
 x = x axis
 y = y axis
+z = z axis
 
-d = down  = negative y
-u = up    = positive y
 l = left  = negative x
 r = right = positive x
+d = down  = negative y
+u = up    = positive y
+b = back  = negative z
+f = front = positive z
 
 i = iterator 1
 j = iterator 2
+k = iterator 3
+
+mem = memory
+getmem = getmem = get vector from memory
 
 vector.x = vector's x magnitude (i value)
 vector.y = vector's y magnitude (j value)
+vector.z = vector's z magnitude (k value)
 
 p = displacement vector from point
-pul = p to u and l vertex
-pur = p to u and r vertex
-pdl = p to d and l vertex
-pdr = p to d and r vertex
+pfur = p to f, u, and r vertex
+pful = p to f, u, and l vertex
+pfdr = p to f, d, and r vertex
+pfdl = p to f, d, and l vertex
+pbur = p to b, u, and r vertex
+pbul = p to b, u, and l vertex
+pbdr = p to b, d, and r vertex
+pbdl = p to b, d, and l vertex
 
 dp = dot product
-dpul = dp of pul and u and l vectors
-dpur = dp of pur and u and r vectors
-dpdl = dp of pdl and d and l vectors
-dpdr = dp of pdr and d and r vectors
+dpfur = dp of pur and f, u, and r vectors
+dpful = dp of pul and f, u, and l vectors
+dpfdr = dp of pdr and f, d, and r vectors
+dpfdl = dp of pdl and f, d, and l vectors
+dpbur = dp of pur and b, u, and r vectors
+dpbul = dp of pul and b, u, and l vectors
+dpbdr = dp of pdr and b, d, and r vectors
+dpbdl = dp of pdl and b, d, and l vectors
 
 in = interpolation
 re = return
-reu = re u part = in of dpul and dpur
-red = re d part = in of dpdl and dpdr
+refu = re f and u part
+refd = re f and d part
+rebu = re b and u part
+rebd = re b and d part
+ref = re f part
+reb = re b  part
