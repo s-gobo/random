@@ -10,6 +10,7 @@ let symmetry = {
     5: 5,
     6: 9,
     8: 8,
+    9: 6,
   },
   horizontal: {
     0: 0,
@@ -28,7 +29,7 @@ let symmetry = {
   },
 };
 
-let isSymmmetric = function(number) {
+let isSymmetric = function(number) {
   let digits = number.toString().split("").map(x => +x);
   let horizRefl = true, vertRefl = true, rot = true;
   for (let i = 0; i < digits.length; i++) {
@@ -46,5 +47,5 @@ let isSymmmetric = function(number) {
 
 console.log("#\thoriz\tvert\trot")
 for (let i = 0; i <= 1400; i++) {
-  isSymmmetric(i);
+  isSymmetric(i);
 }
