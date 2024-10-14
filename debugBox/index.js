@@ -42,9 +42,10 @@ const getBox = function(...objects) {
         output = "" + output;
       }
     }
+    output = output.replace(/[\r]/, " ");
     output = output.split("\n");
     object.postOutput = output;
-    console.log("preout", object);
+    // console.log("preout", object);
     
     // find vlen
     if (output.length > vlen) {
@@ -63,11 +64,11 @@ const getBox = function(...objects) {
     const isRight = i === objects.length - 1;
     // find length of box
     const object = objects[i];
-    const label = object.label;
+    const label = object.label.replace(/[\n]/, "\\n");
     const type = object.postType;
     const output = object.postOutput;
     
-    console.log("postout", object);
+    // console.log("postout", object);
     const llen = label.length;
     const olen = output.reduce((max, x) => {
       return x.length > max? x.length: max;
@@ -103,109 +104,27 @@ const getBox = function(...objects) {
   }
   re2 = re2.join("\n");
   return [re1, re2, re3].join("\n");
-}
-const debugBox = function(label = "") {
-  let outputraw, typeraw, type;
-  // run the label code, output the error if it doesn't work
-  try {
-    outputraw = eval(label);
-    typeraw = typeof outputraw;
-    type = function type(value) {
-      if (value === null) {
-        return "null"; //null
-      }
-      if (!["object", "function"].includes(typeraw)) {
-        return typeraw; // primitives
-      }
-      const tag = value[Symbol.toStringTag];
-      if (typeof tag === "string") {
-        return tag; // Symbol.toStringTag
-      }
-      if (typeraw === "function" &&
-        Function.prototype.toString.call(value).startsWith("class")
-      ) {
-        return "class"; //classes
-      }
-      const className = value.constructor.name;
-      if (typeof className === "string" && className !== "") {
-        return className; //constructors
-      }
-      return typeraw;
-    } (outputraw);
-  } catch (e) {
-    outputraw = e;
-    type = "undefined";
+};
+const debugBox = function(label, output) {
+  if (output === undefined) {
+    try {
+      let unusedBufferVariable;
+      output = eval("unusedBufferVariable = " + label);
+    } catch {
+      output = label;
+    }
   }
-  // format the output into a string
-  let output;
   try {
-    output = outputraw.toString();
+    label = label.toString();
   } catch {
-    output = "" + outputraw;
+    label = "" + label;
   }
-  // format objects as JSON
-  if (typeraw === "object") {
-    output = JSON.stringify(outputraw);
-    output = debugBox(outputraw[0]);
-  }
-  output = output.split("\n");
-  const llen = label.length;
-  const olen = Math.max(...output.map(x => x.length)) + 2;
-  const tlen = type.length;
-  let len = Math.max(llen, olen, tlen);
-  let re = "";
-  re += `┌${label + "─".repeat(len - llen)}┐\n`;
-  for (x of output) {
-    let aolen = x.length + 2;
-    re += `│ ${x + " ".repeat(len - aolen)} │\n`;
-  }
-  re +=`└${"─".repeat(len - tlen) + type}┘\n`;
-  console.log(re);
+  console.log(getBox({
+    label: label,
+    output: output,
+  }));
 };
 
 
-// let a = [0, 1, null, 5, 19, null, () => {}, [0, 3, {ok: "yes!"}], "really long string here yay"];
-// debugBox("a");
-
-console.log(
-  getBox(
-    {label: "hello", output: 1},
-    {label: "hello2", output: "hello\nbob\nsomebody"},
-    {
-      label: "hello3",
-      output: {
-        "hello": "hello\nbob\nsomebody",
-        "5": 2,
-        map: new Map(),
-        fun: {
-          yay: () => console.log("yay"),
-          boo: function () {
-            console.log("boo")
-          },
-        },
-        ok: 3,
-        arr: [ 3, 4, "string", "haha",],
-        obj: {arr: [0, 1, 2],}
-      },
-    }
-  )
-);
-
-// {
-//   "hello": 1,
-//   "hello2": "hello\nbob\nsomebody",
-//   "hello3": {
-//     "hello": "hello\nbob\nsomebody",
-//     "5": 2,
-//     map: new Map(),
-//     fun: {
-//       yay: () => console.log("yay"),
-//       boo: function () {
-//         console.log("boo")
-//       },
-//     },
-//     ok: 3,
-//     arr: [ 3, 4, "string", "haha",],
-//     obj: {arr: [0, 1, 2],}
-//   },
-// }
+let a = [0, 1, null, 5, 19, , () => {}, [0, 3, {ok: "yes!"}], "really long string here yay"];
+debugBox("a");
