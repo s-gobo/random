@@ -34,8 +34,16 @@ const getBox = function(...objects) {
           output: output[property],
         });
       }
-      output = getBox(...processObject);
+      if (processObject.length === 0) {
+        // object doesn't have properties
+        object.postOutput = [];
+        continue;
+      } else {
+        // call recursively
+        output = getBox(...processObject);
+      }
     } else {
+      // is not an object
       try {
         output = output.toString();
       } catch {
@@ -43,6 +51,7 @@ const getBox = function(...objects) {
       }
     }
     output = output.replace(/[\r]/, " ");
+    output = output.replace(/[\t]/, "    ");
     output = output.split("\n");
     object.postOutput = output;
     // console.log("preout", object);
@@ -64,17 +73,22 @@ const getBox = function(...objects) {
     const isRight = i === objects.length - 1;
     // find length of box
     const object = objects[i];
-    const label = object.label.replace(/[\n]/, "\\n");
+    // format label
+    let label = object.label
+    label = label.replace(/[\n]/, "\\n");
+    label = label.replace(/[\t]/, "\\t");
     const type = object.postType;
     const output = object.postOutput;
-    
     // console.log("postout", object);
+    
+    // get length of output
     const llen = label.length;
     const olen = output.reduce((max, x) => {
       return x.length > max? x.length: max;
     }, "") + 2;
     const tlen = type.length;
     const len = Math.max(llen, olen, tlen);
+    
     if (isLeft) {
       re1 += "┌";
       re3 += "└";
@@ -102,8 +116,12 @@ const getBox = function(...objects) {
       re3 += "┴";
     }
   }
-  re2 = re2.join("\n");
-  return [re1, re2, re3].join("\n");
+  if (re2.length === 0) {
+    return [re1, re3].join("\n");
+  } else {
+    re2 = re2.join("\n");
+    return [re1, re2, re3].join("\n");
+  }
 };
 const debugBox = function(label, output) {
   if (output === undefined) {
@@ -126,5 +144,4 @@ const debugBox = function(label, output) {
 };
 
 
-let a = [0, 1, null, 5, 19, , () => {}, [0, 3, {ok: "yes!"}], "really long string here yay"];
-debugBox("a");
+debugBox("{empty: []}");
