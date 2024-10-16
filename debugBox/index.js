@@ -125,23 +125,47 @@ const getBox = function(...objects) {
 };
 const debugBox = function(label, output) {
   if (output === undefined) {
-    try {
-      let unusedBufferVariable;
-      output = eval("unusedBufferVariable = " + label);
-    } catch {
+    // generate output based on label
+    if (typeof label === "string") {
+      // it could be code!
+      try {
+        // run the code
+        let unusedBufferVariable;
+        output = eval("unusedBufferVariable = " + label);
+      } catch {
+        // it's just a string
+        output = label;
+      } 
+    } else {
+      // the label's the output (not a string)
       output = label;
     }
   }
+  // stringify the label!
   try {
     label = label.toString();
   } catch {
     label = "" + label;
   }
+  
   console.log(getBox({
     label: label,
     output: output,
   }));
 };
 
-
-debugBox("{empty: []}");
+debugBox(100);
+debugBox("string");
+debugBox("{array: [5, 4, 3, 2, 1], number: 3, method: () => 3, string: 'hello!',}");
+debugBox("{array: [5, 4, 3, 2, 1], number: 3, method: () => 3, string: 'hello!',}",
+{array: [5, 4, 3, 2, 1], number: 3, method: () => 3, string: 'hello!',});
+debugBox("label",
+{array: [5, 4, 3, 2, 1], number: 3, method: () => 3, string: 'hello!',});
+debugBox(100,
+{array: [5, 4, 3, 2, 1], number: 3, method: () => 3, string: 'hello!',});
+debugBox(undefined,
+{array: [5, 4, 3, 2, 1], number: 3, method: () => 3, string: 'hello!',});
+debugBox(100, "string");
+debugBox(undefined, undefined);
+debugBox("{array: [5, 4, 3, 2, 1], number: 3, method: () => 3, string: 'hello!',",
+undefined);
