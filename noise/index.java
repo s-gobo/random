@@ -1,19 +1,31 @@
 import java.util.ArrayList;
 import java.util.Random;
 
-//WIP
-
 public class Main {
   public static void main(String[] args) {
     Perlin2D noise = new Perlin2D(10, 10);
-    for (double i = 0; i < 10; i += 0.1) {
-      System.out.println(noise.get(i, 0));
+    for (double i = 0; i < 10; i += 0.2) {
+      for (double j = 0; j < 10; j += 0.1) {
+        double number = noise.get(i, j);
+        System.out.print(number >= 0.5? "@":
+          number >= 0.3? "X":
+          number >= 0.1? "+":
+          number >= -0.1? "|":
+          number >= -0.3? "-":
+          number >= -0.5? ".":
+          " ");
+      }
+      System.out.println();
     }
   }
 }
 
 public class Perlin2D {
-  final ArrayList<ArrayList<Vector2D>> MEMORY;
+  private final ArrayList<ArrayList<Vector2D>> MEMORY;
+  
+  public ArrayList<ArrayList<Vector2D>> getMemory() {
+    return MEMORY;
+  }
   
   public Perlin2D(int x, int y, long seed) {
     Random rand = new Random(seed);
@@ -63,8 +75,8 @@ public class Perlin2D {
   }
   
   private Vector2D mem(int x, int y) {
-    x %= MEMORY.size();
-    y %= MEMORY.get(0).size();
+    x %= MEMORY.get(0).size();
+    y %= MEMORY.size();
     return MEMORY.get(x).get(y);
   }
   
@@ -89,12 +101,10 @@ public class Perlin2D {
     double dpLU = toLU.dotProduct(mem(l, u));
     double dpRU = toRU.dotProduct(mem(r, u));
     
-    System.out.println("" + mem(l, d)+ mem(r, d)+ mem(l, u)+ mem(r, u));
-    
     double reD = in(dpLD, dpRD, x - l);
-    double reU = in(dpLU, dpRU, x - r);
+    double reU = in(dpLU, dpRU, x - l);
     
-    double re = in(reD, reU, y - r);
+    double re = in(reD, reU, y - d);
     
     return re;
   }
@@ -114,8 +124,16 @@ public class Vector2D {
     this.j = 0;
   }
   
-  public double dotProduct(Vector2D other) {
-    return this.i * other.i + this.j + other.j;
+  public double dotProduct(Vector2D that) {
+    return this.i * that.i + this.j + that.j;
+  }
+  
+  public static double dotProduct(Vector2D a, Vector2D b) {
+    return a.i * b.i + a.j * b.j;
+  }
+  
+  public double magnitude() {
+    return Math.sqrt(i * i + j * j);
   }
   
   public String toString() {
