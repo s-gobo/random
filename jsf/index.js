@@ -25,7 +25,7 @@ const le = function (x) {
     if (x in map) {
       return map[x];
     } else {
-      return fun(`return '\\u${x.charCodeAt().toString(16).padStart(4, 0)}'`)
+      return fun(`return '\\u${x.charCodeAt().toString(16).padStart(4, 0)}'`);
     }
   }
   let re = map[x[0]];
@@ -130,7 +130,7 @@ map.E = `(${fun("try{String().normalize(false)}catch(f){return f}")}+[])[${num(5
 // RegExp function
 const reg = function(x = "") {
   return `${fun("return RegExp")}(${le(x)})`;
-}
+};
 
 // RegExp() makes /(?:)/
 map["/"] = `(${reg()}+[])[${num(0)}]`;
@@ -143,7 +143,7 @@ map["\\"] = `(${reg("/")}+[])[${num(1)}]`;
 // [[],[]] makes , throws SyntaxError
 map[","] = `[[]][${le("concat")}]([[]])+[]`;
 let synerr = fun(`try{Function([]+[[]].concat([[]]))()}catch(f){return f}`);
-map["'"] = `(${reg("[\\u0027]")})[${le("exec")}](${synerr})[${le("0")}]`
+map["'"] = `(${reg("[\\u0027]")})[${le("exec")}](${synerr})[${le("0")}]`;
 
 let test = fun(`console.log("hello, world");`);
 // console.log(test);
