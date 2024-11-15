@@ -18,6 +18,9 @@ const num = function(x) {
 };
 
 const le = function (x) {
+  if (x === "") {
+    return "";
+  }
   if (x.length == 1) {
     if (x in map) {
       return map[x];
