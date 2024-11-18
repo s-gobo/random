@@ -1,6 +1,7 @@
 class LifeGame {
   constructor() {
     this.alive = [];
+    this.time = 0;
   }
   
   getState(x, y) {
@@ -34,12 +35,14 @@ class LifeGame {
       }
     }
     
-    let count = new Map();
+    this.time++;
+    
+    let count = {};
     const countAdd = function(x, y) {
-      if (!count.has([x, y])) {
-        count.set([x, y], 0);
+      if (count[[x, y]] === undefined) {
+        count[[x, y]] = 0;
       }
-      count.set(count.get([x, y]) + 1);
+      count[[x, y]]++;
     }
     
     for (let coord of this.alive) {
@@ -54,10 +57,12 @@ class LifeGame {
     }
     
     let nextAlive = [];
-    for (let [coord, num] in count) {
+    for (let coord in count) {
+      let num = count[coord];
+      coord = coord.split(",").map(x => +x);
       if (num === 3 || num === 2 && this.getState(coord[0], coord[1]))
       {
-        nextAlive.push(key);
+        nextAlive.push(coord);
       }
     }
     
@@ -87,16 +92,23 @@ class LifeGame {
     return this.bound((coord, re) => coord[1] < re, this.alive[0][1]);
   }
   
-  display(margins = 1) {
+  displayThumb(margins = 1) {
     let l = this.leftBound()  - margins;
     let r = this.rightBound() + margins;
     let u = this.upBound()    + margins;
     let d = this.downBound()  - margins;
     
+    display(l, r, d, u);
+  }
+  
+  display(l, r, d, u) {
+    console.log("Tick "+ this.time + ": ");
     for (let i = u; i >= d; i--) {
       let re = "";
       for (let j = l; j <= r; j++) {
-        re += this.getState(i, j)? "X": " ";
+        re += this.getState(j, i)? "X":
+          i === 0 && j == 0? "+":
+          i === 0? "-": j === 0? "|": ".";
       }
       console.log(re);
     }
@@ -105,5 +117,12 @@ class LifeGame {
 
 let conway = new LifeGame();
 conway.setState(0, 0, true);
-console.log(conway.alive);
-conway.display();
+conway.setState(0, 1, true);
+conway.setState(1, 1, true);
+conway.setState(0, -1, true);
+conway.setState(-1, 0, true);
+conway.display(-10, 10, -5, 5);
+for (let i = 0; i < 10; i++) {
+  conway.tick();
+  conway.display(-10, 10, -5, 5);
+}
