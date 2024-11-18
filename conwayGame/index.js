@@ -121,8 +121,16 @@ conway.setState(0, 1, true);
 conway.setState(1, 1, true);
 conway.setState(0, -1, true);
 conway.setState(-1, 0, true);
-conway.display(-10, 10, -5, 5);
-for (let i = 0; i < 10; i++) {
-  conway.tick();
-  conway.display(-10, 10, -5, 5);
+
+async function run() {
+  while (true) {
+    console.clear();
+    conway.display(-10, 10, -5, 5);
+    conway.tick();
+    
+    await new Promise(resolve => setTimeout(resolve, 100));   
+  }
 }
+
+run();
+
