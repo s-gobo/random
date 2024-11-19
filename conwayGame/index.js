@@ -96,9 +96,9 @@ class LifeGame {
     for (let i = u; i >= d; i--) {
       let re = "";
       for (let j = l; j <= r; j++) {
-        re += this.getState(j, i)? "X":
-          i === 0 && j == 0? "+":
-          i === 0? "-": j === 0? "|": ".";
+        re += this.getState(j, i)? "█ ":
+          i === 0 && j == 0? "┼ ":
+          i === 0? "─ ": j === 0? "│ ": "· ";
       }
       console.log(re);
     }
