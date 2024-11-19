@@ -69,27 +69,17 @@ class LifeGame {
     this.alive = nextAlive;
   }
   
-  bound(condition, start) {
-    let re = start;
-    for (let coord in this.alive) {
-      if (condition(coord, re)) {
-        re = coord[0];
-      }
-    }
-    return re;
-  }
-  
   leftBound() {
-    return this.bound((coord, re) => coord[0] < re, this.alive[0][0]);
+    return Math.min(...this.alive.map(x => x[0]));
   }
   rightBound() {
-    return this.bound((coord, re) => coord[0] > re, this.alive[0][0]);
+    return Math.max(...this.alive.map(x => x[0]));
   }
   upBound() {
-    return this.bound((coord, re) => coord[1] > re, this.alive[0][1]);
+    return Math.max(...this.alive.map(x => x[1]));
   }
   downBound() {
-    return this.bound((coord, re) => coord[1] < re, this.alive[0][1]);
+    return Math.min(...this.alive.map(x => x[1]));
   }
   
   displayThumb(margins = 1) {
@@ -98,7 +88,7 @@ class LifeGame {
     let u = this.upBound()    + margins;
     let d = this.downBound()  - margins;
     
-    display(l, r, d, u);
+    this.display(l, r, d, u);
   }
   
   display(l, r, d, u) {
