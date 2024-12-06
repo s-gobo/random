@@ -104,7 +104,11 @@ class Uno {
       if (!skip) {
         player.turn();
         if (player.getNumCards() == 0) {
-          System.out.println(player + " wins!");
+          if (player.toString().equals("You")) {
+            System.out.println(player + "win!");
+          } else {
+            System.out.println(player + " wins!");
+          }
           break;
         }
         if (lastDiscard.getPostEffect() && lastDiscardTurnsAgo == 0) {
@@ -480,6 +484,9 @@ class Player {
         }
       }
     }
+    if (!isFound) {
+      pNumber = ' ';
+    }
     if (pColor == 'w') {
       if (pNumber != ' ' && pNumber != '+') {
         System.out.println(Card.longifyName(pColor, pNumber) +
@@ -810,7 +817,6 @@ class Card {
     }
   }
 }
-
 
 
 
