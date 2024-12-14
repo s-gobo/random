@@ -6,6 +6,7 @@ public class Main {
   public static void main(String[] args) {
     Uno game = new Uno();
     game.play();
+    in.close();
   }
   
   // INPUT METHODS
@@ -100,6 +101,8 @@ class Uno {
   public void play() {
     // main game loop
     while (true) {
+      lastDiscardTurnsAgo++;
+
       // current turn's Player
       Player player = players[turn];
       
@@ -157,8 +160,6 @@ class Uno {
           turn += numPlayers;
         }
       }
-      
-      lastDiscardTurnsAgo++;
     }
   }
   
@@ -228,7 +229,7 @@ class Player {
     return handSize;
   }
   
-  // @Override
+  /** @Override */
   public String toString() {
     return name;
   }
@@ -425,7 +426,6 @@ class Player {
       }
     }
     
-    int[][] colorSort = {rs, bs, gs, ys,};
     int[] colorSortSize = {rsSize, bsSize, gsSize, ysSize,};
       
     int[] colorSortSizeSort = {-1, -1, -1, -1};
@@ -542,6 +542,7 @@ class Player {
           }
         }
       }
+      inputSc.close();
       if (!isFound) {
         // short form check (eg "y3")
         pNumber = inputStr.charAt(1);
@@ -728,23 +729,32 @@ class Player {
 }
 
 class Card {
-  private String name;
-  private String sname;
-  
-  private String color;
-  private char scolor;
-  private String number;
-  private char snumber;
-  
-  private boolean postEffect;
-  private boolean preEffect;
-  
+  private final String name;
+  private final String sname;
+
+  private final String color;
+  private final char scolor;
+  private final String number;
+  private final char snumber;
+
+  private final boolean postEffect;
+  private final boolean preEffect;
+
   private char metaSColor;
   private String metaColor;
+
+  private static char[] scolors = {'r', 'g', 'b', 'y',};
+  private static String[] colors = {"red", "green", "blue", "yellow"};
   
+  private static char[] snumbers = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', 'r', 's'};
+  private static String[] numbers = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Draw 2", "Reverse", "Skip"};
+  
+  /**
+   * @param s - a string with the card's short name
+   */
   public Card(String s) {
-    preEffect = false;
-    postEffect = false;
+    boolean repreEffect = false;
+    boolean repostEffect = false;
     
     sname = s;
     scolor = s.charAt(0);
@@ -769,13 +779,13 @@ class Card {
         } else {
           number = "draw 2";
         }
-        preEffect = true;
+        repreEffect = true;
       } else if (snumber == 'r') {
         number = "reverse";
-        postEffect = true;
+        repostEffect = true;
       } else if (snumber == 's') {
         number = "skip";
-        preEffect = true;
+        repreEffect = true;
       } else {
         number = "" + snumber;
       }
@@ -785,8 +795,56 @@ class Card {
       number = "";
       name = color;
     }
+
+    postEffect = repostEffect;
+    preEffect = repreEffect;
   }
   
+  /**
+   * @param c - color
+   * @param n - number
+   */
+  public Card(char c, char n) {
+    this.sname = "" + c + n;
+    this.scolor = c;
+    this.snumber = n;
+
+    String recolor = "";
+    for (int i = 0; i < scolors.length; i++) {
+      if (scolors[i] == c) {
+        recolor = colors[i];
+        break;
+      }
+    }
+
+    String renumber = "";
+    for (int i = 0; i < snumbers.length; i++) {
+      if (snumbers[i] == n) {
+        renumber = numbers[i];
+        break;
+      }
+    }
+
+    if (c == 'w') {
+      recolor = "wild";
+      if (n == '+') {
+        renumber = "Draw 4";
+      }
+    }
+
+    color = recolor;
+    number = renumber;
+
+    if (renumber.equals("")) {
+      name = recolor;
+    } else {
+      name = recolor + " " + renumber;
+    }
+
+    preEffect = n == '+' || n == 's';
+    postEffect = n == 'r';
+  }
+
   public String getSname() {
     return sname;
   }
@@ -825,44 +883,39 @@ class Card {
     return postEffect;
   }
   
-  // @Override
+  /** @Override */
   public String toString() {
     return name;
   }
   
   public static String longifyName(char scolor, char snumber) {
-    String color;
-    if (scolor == 'r') {
-      color = "red";
-    } else if (scolor == 'b') {
-      color = "blue";
-    } else if (scolor == 'g') {
-      color = "green";
-    } else if (scolor == 'y') {
-      color = "yellow";
-    } else if (scolor == 'w') {
-      color = "wild";
-    } else {
-      color = "" + scolor;
-    }
-    if (snumber == ' ') {
-      return color;
-    }
-    String number;
-    if (snumber == '+') {
-      if (scolor == 'w') {
-        number = "draw 4";
-      } else {
-        number = "draw 2";
+    String recolor = "";
+    for (int i = 0; i < scolors.length; i++) {
+      if (scolors[i] == scolor) {
+        recolor = colors[i];
+        break;
       }
-    } else if (snumber == 'r') {
-      number = "reverse";
-    } else if (snumber == 's') {
-      number = "skip";
-    } else {
-      number = "" + snumber;
     }
-    return color + " " + number;
+
+    String renumber = "";
+    for (int i = 0; i < snumbers.length; i++) {
+      if (snumbers[i] == snumber) {
+        renumber = numbers[i];
+        break;
+      }
+    }
+
+    if (scolor == 'w') {
+      recolor = "wild";
+      if (snumber == '+') {
+        renumber = "Draw 4";
+      }
+    }
+
+    if (renumber.equals("")) {
+      return recolor;
+    }
+    return recolor + " " + renumber;
   }
   
   public static Card[] stdDeck() {
