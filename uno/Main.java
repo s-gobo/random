@@ -9,9 +9,13 @@ public class Main {
   }
   
   // INPUT METHODS
+  
+  // ln - line: get input line
   public static String ln() {
     return in.nextLine();
   }
+  
+  // ln with default for empty input
   public static String ln(String or) {
     String ln = ln();
     if (ln.equals("")) {
@@ -20,6 +24,8 @@ public class Main {
     }
     return ln;
   }
+  
+  // yes or no input
   public static boolean lnyn() {
     char re = ln("no").toLowerCase().charAt(0);
     if (re == 'y') {
@@ -48,32 +54,41 @@ class Uno {
   private boolean isCW;
   
   public Uno() {
+    // card deck setup
     draw = Card.stdDeck();
     Card.shuffle(draw);
     drawSize = draw.length;
     
+    // player setup
     players = new Player[4];
     numPlayers = players.length;
+    // you
     players[0] = new Player(this, false);
+    // bots
     for (int i = 1; i < numPlayers; i++) {
       players[i] = new Player(this, true);
     }
+    // everyone's starting cards
     for (int i = 0; i < 7; i++) {
       for (Player player : players) {
         player.draw();
       }
     }
     
+    // discard pile
     discard = new Card[108];
     discardSize = 0;
     
+    // starting card
     Card start = draw();
     System.out.println("The starting card is " + start + "!");
+    // starting wild cards have any color
     if (start.getScolor() == 'w') {
       start.withMetaSColor('x');
     }
     discard(start);
     
+    // start position and rotation
     turn = 0;
     isCW = true;
   }
@@ -83,9 +98,12 @@ class Uno {
   }
   
   public void play() {
+    // main game loop
     while (true) {
-      lastDiscardTurnsAgo++;
+      // current turn's Player
       Player player = players[turn];
+      
+      // does the last played card skip their turn?
       boolean skip = false;
       if (lastDiscard.getPreEffect() && lastDiscardTurnsAgo == 1) {
         if (lastDiscard.getSnumber() == 's') {
@@ -102,16 +120,22 @@ class Uno {
       }
       
       if (!skip) {
+        // the player gets a turn
         player.turn();
-        if (player.getNumCards() == 0) {
+        
+        // check if the player won
+        if (player.getHandSize() == 0) {
           if (player.toString().equals("You")) {
-            System.out.println(player + "win!");
+            System.out.println(player + " win!");
           } else {
             System.out.println(player + " wins!");
           }
           break;
         }
+        
+        // the played card has an effect
         if (lastDiscard.getPostEffect() && lastDiscardTurnsAgo == 0) {
+          // reverse card
           if (lastDiscard.getSnumber() == 'r') {
             isCW = !isCW;
             if (isCW) {
@@ -123,6 +147,7 @@ class Uno {
         }
       }
       
+      // increment turn according to play direction
       if (isCW) {
         turn++;
         turn %= numPlayers;
@@ -132,28 +157,40 @@ class Uno {
           turn += numPlayers;
         }
       }
+      
+      lastDiscardTurnsAgo++;
     }
   }
   
   public Card draw() {
+    // reshuffle discard to draw if no more cards to take
     if (drawSize == 0) {
+      // check if the discard pile only has one card
       if (discardSize == 1) {
         return null;
       }
       System.out.println("Discard is reshuffled to draw");
+      
+      // the last discarded card is kept; the other cards are reshuffled
       discardSize--;
       drawSize = discardSize;
+      // move cards between piles
       for (int i = 0; i < discardSize; i++) {
         draw[i] = discard[i];
       }
+      // move last discarded card as new starting card
       discard[0] = discard[discardSize];
       discardSize = 1;
+      // shuffle draw pile
       Card.shuffle(draw);
     }
+    
+    // remove the last card and return it
     drawSize--;
     return draw[drawSize];
   }
   public void discard(Card c) {
+    // discard the card
     lastDiscard = c;
     lastDiscardTurnsAgo = 0;
     discard[discardSize] = c;
@@ -171,17 +208,23 @@ class Player {
   
   public Player(Uno game, boolean bot) {
     isBot = bot;
+    
+    // name bots and players
     if (isBot) {
       name = "Bot" + (int) (1000 * Math.random());
     } else {
       name = "You";
     }
+    
+    // game that player belongs to
     this.game = game;
+    
+    // making hand space
     hand = new Card[10];
     handSize = 0;
   }
   
-  public int getNumCards() {
+  public int getHandSize() {
     return handSize;
   }
   
@@ -202,29 +245,37 @@ class Player {
   }
   
   public Card draw() {
+    // draw a card
     Card drawnCard = game.draw();
+    // check if a card could not be drawn
     if (drawnCard == null) {
       return null;
     }
+    // increase hand size if it couldn't fit the card
     if (hand.length == handSize) {
       Card[] temp = hand;
+      // hand size increases by 10
       hand = new Card[handSize + 10];
       for (int i = 0; i < temp.length; i++) {
         hand[i] = temp[i];
       }
     }
+    // add card to hand and return it
     hand[handSize] = drawnCard;
     handSize++;
     return drawnCard;
   }
   public void play(int cardI) {
+    // discards a card, based on index in hand
     game.discard(hand[cardI]);
     handSize--;
+    // shifts cards in hand to remove selected card
     for (int i = cardI; i < handSize; i++) {
       hand[i] = hand[i + 1];
     }
   }
   public void penalty(int num) {
+    // player draws num cards (from +2 or +4 card)
     if (name.equals("You")) {
       System.out.println("You draw " + num + " cards");
     } else {
@@ -236,6 +287,9 @@ class Player {
   }
   
   public int botUse() {
+    // the bot chooses a card to play
+    
+    // info about the last card
     Card lastDiscard = game.getLastDiscard();
     char lSnumber = lastDiscard.getSnumber();
     char lScolor = lastDiscard.getScolor();
@@ -249,6 +303,7 @@ class Player {
       lScolor == 'g'? 2:
       lScolor == 'y'? 3: 4;
     
+    // arrays that sort the bot's hand
     int[] rs = new int[handSize];
     int rsSize = 0;
     int[] bs = new int[handSize];
@@ -257,9 +312,11 @@ class Player {
     int gsSize = 0;
     int[] ys = new int[handSize];
     int ysSize = 0;
+    // indexes of wild cards
     int w = -1;
     int wplus = -1;
     
+    // sort cards into arrays
     for (int i = 0; i < handSize; i++) {
       if (hand[i].getScolor() == 'r') {
         rs[rsSize] = i;
@@ -274,6 +331,7 @@ class Player {
         ys[ysSize] = i;
         ysSize++;
       } else if (hand[i].getScolor() == 'w') {
+        // set wild indexes
         if (hand[i].getSnumber() == '+') {
           wplus = i;
         } else {
@@ -282,28 +340,11 @@ class Player {
       }
     }
     
-    // System.out.println(
-    //   rsSize + " " +
-    //   bsSize + " " +
-    //   gsSize + " " +
-    //   ysSize + " ");
-    
+    // new array for all sorted cards
     int[][] colorSort = {rs, bs, gs, ys,};
     int[] colorSortSize = {rsSize, bsSize, gsSize, ysSize,};
     
-    // for (int i = 0; i < rsSize; i++) {
-    //   System.out.println("r" + hand[rs[i]]);
-    // }
-    // for (int i = 0; i < bsSize; i++) {
-    //   System.out.println("b" + hand[bs[i]]);
-    // }
-    // for (int i = 0; i < gsSize; i++) {
-    //   System.out.println("g" + hand[gs[i]]);
-    // }
-    // for (int i = 0; i < ysSize; i++) {
-    //   System.out.println("y" + hand[ys[i]]);
-    // }
-      
+    // sort the colors based on amount of cards of that color
     int[] colorSortSizeSort = {-1, -1, -1, -1};
     for (int i = 0; i < 4; i++) {
       int j = 0;
@@ -315,23 +356,24 @@ class Player {
         colorSortSizeSort[k] = colorSortSizeSort[k - 1];
       }
       colorSortSizeSort[j] = i;
-      // System.out.println(
-      //   (colorSortSizeSort[0] == -1? "-1": colorSortSize[colorSortSizeSort[0]]) + " " +
-      //   (colorSortSizeSort[1] == -1? "-1": colorSortSize[colorSortSizeSort[1]]) + " " +
-      //   (colorSortSizeSort[2] == -1? "-1": colorSortSize[colorSortSizeSort[2]]) + " " +
-      //   (colorSortSizeSort[3] == -1? "-1": colorSortSize[colorSortSizeSort[3]]));
     }
     
+    // find a card from the best color, if possible
     for (int i = 0; i < 4; i++) {
       int color = colorSortSizeSort[i];
+      // there are no cards from the color
       if (colorSortSize[color] == 0) {
         continue;
       }
+      // the color can be placed
       if (lScolor == 'x' || color == lScolorNum) {
+        // return a random card of the color
         return colorSort[color][(int) (colorSortSize[color] * Math.random())];
       } else {
+        // can a card be placed matching number?
         for (int j = 0; j < colorSortSize[color]; j++) {
           int card = colorSort[color][j];
+          // card with desired color matches number
           if (lSnumber == hand[card].getSnumber()) {
             return card;
           }
@@ -339,18 +381,25 @@ class Player {
       }
     }
     
+    // preferred color (for switching)
     char switchColor = new char[]{'r', 'b', 'g', 'y',}[colorSortSizeSort[0]];
+    // use a wild, if possible
     if (w >= 0) {
       hand[w].setMetaSColor(switchColor);
       return w;
     }
+    // use a wild draw 4, if possible
     if (wplus >= 0) {
       hand[wplus].setMetaSColor(switchColor);
       return wplus;
     }
+    
+    // no card possible, draw a card
     return -1;
   }
   public char botSwitch() {
+    // get the bot's preferred color (copy of portion of above method)
+    
     int[] rs = new int[handSize];
     int rsSize = 0;
     int[] bs = new int[handSize];
@@ -395,6 +444,9 @@ class Player {
     return new char[]{'r', 'b', 'g', 'y',}[colorSortSizeSort[0]];
   }
   public boolean playable(Card c) {
+    // is a card playable?
+    
+    // get last card info
     Card lastDiscard = game.getLastDiscard();
     char lScolor = lastDiscard.getScolor();
     char lSnumber = lastDiscard.getSnumber();
@@ -402,40 +454,57 @@ class Player {
       lScolor = lastDiscard.getMetaSColor();
       lSnumber = ' ';
     }
+    
+    // wilds can be played
     if (c.getScolor() == 'w') {
+      /* wild draw fours cannot be played if another card can
+       * (bot would pick the other card)
+       */
       if (c.getSnumber() == '+' && !hand[botUse()].getSname().equals("w+")) {
         return false;
       }
       return true;
     }
+    // matches color
     if (lScolor == 'x' || c.getScolor() == lScolor) {
       return true;
     }
+    // matches number
     if (c.getSnumber() == lSnumber) {
       return true;
     }
+    
+    // can't be played
     return false;
   }
   public int cardSuch(char scolor, char snumber) {
+    // there's a card in the hand with the color and number
     for (int i = 0; i < handSize; i++) {
       Card card = hand[i];
       if (card.getScolor() == scolor && card.getSnumber() == snumber) {
+        // yes, and it's at index i
         return i;
       }
     }
+    // no
     return -1;
   }
   public int pInput() {
+    // get player input on their turn
     String inputStr = Main.ln().toLowerCase();
     
+    // nothing is entered
     if (inputStr.length() == 0) {
       System.out.println("No card entered. Defaulting to draw.");
       return -1;
     }
+    
     char pColor = inputStr.charAt(0);
     if (pColor == 'd') {
+      // "draw" -> draw a card
       return -1;
     }
+    // find color
     char[] colors = {'r', 'b', 'g', 'y', 'w'};
     boolean isFound = false;
     for (char color : colors) {
@@ -443,21 +512,25 @@ class Player {
         isFound = true;
       }
     }
+    // no color found
     if (!isFound) {
       System.out.println("Card not recognized. Defaulting to draw.");
       return -1;
     }
     
+    // find number
     char pNumber = ' ';
     if (inputStr.length() > 1) {
       char[] numbers = {
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', 'r', 's'};
       isFound = false;
+      // long form check (eg "yellow 3")
       Scanner inputSc = new Scanner(inputStr);
       inputSc.next();
       if (inputSc.hasNext()) {
         pNumber = inputSc.next().charAt(0);
         if (pNumber == 'd') {
+          // "draw" -> "+"
           isFound = true;
           pNumber = '+';
         } else {
@@ -470,8 +543,10 @@ class Player {
         }
       }
       if (!isFound) {
+        // short form check (eg "y3")
         pNumber = inputStr.charAt(1);
         if (pNumber == 'd') {
+          // "draw" -> "+"
           isFound = true;
           pNumber = '+';
         } else {
@@ -487,6 +562,7 @@ class Player {
     if (!isFound) {
       pNumber = ' ';
     }
+    // wild card
     if (pColor == 'w') {
       if (pNumber != ' ' && pNumber != '+') {
         System.out.println(Card.longifyName(pColor, pNumber) +
@@ -494,15 +570,19 @@ class Player {
         return -1;
       }
     } else if (!isFound) {
+      // unrecognized number
       System.out.println("Card not recognized. Defaulting to draw.");
       return -1;
     }
+    
+    // get that card's index in hand
     int re = cardSuch(pColor, pNumber);
     if (re == -1) {
       System.out.println("You don't have a " + Card.longifyName(pColor, pNumber) +
         ". Defualting to draw.");
       return -1;
     }
+    // can you play that card?
     if (!playable(hand[re])) {
       System.out.println(Card.longifyName(pColor, pNumber) +
         " can't be played right now. Defaulting to draw.");
@@ -511,6 +591,7 @@ class Player {
     return re;
   }
   public char pSwitch() {
+    // ask the player to switch the color
     System.out.print("Switch the color to > ");
     char re = Main.ln("red").toLowerCase().charAt(0);
     if (re != 'r' && re != 'b' && re != 'g' && re != 'y') {
@@ -521,6 +602,7 @@ class Player {
   }
   
   public void turn() {
+    // on a turn
     int playCardI;
     if (isBot) {
       playCardI = botUse();
@@ -817,7 +899,3 @@ class Card {
     }
   }
 }
-
-
-
-
