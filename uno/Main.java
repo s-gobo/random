@@ -1,6 +1,24 @@
 import java.util.Scanner;
 
 public class Main {
+  private static final boolean ANSI = true;
+  
+  private static final String ANSI_NORM = "\u001B[m";
+  // private static final String ANSI_DIM = "\u001B[39;2m";
+  private static final String ANSI_DIM = "\u001B[38;5;8m";
+  private static final String ANSI_BOLD = "\u001B[39;1m";
+  private static final String ANSI_SIDE = "\u001B[39;3m";
+  private static final String ANSI_COL(char c) {
+    switch (c) {
+      case 'r': return "\u001B[31m"; // red
+      case 'b': return "\u001B[34m"; // blue
+      case 'g': return "\u001B[32m"; // green
+      case 'y': return "\u001B[33m"; // yellow
+      case 'w': return "\u001B[35m"; // purple
+      default : return "";
+    }
+  }
+  
   public static Scanner in = new Scanner(System.in);
   
   public static void main(String[] args) {
@@ -36,6 +54,187 @@ public class Main {
       System.out.println("Input is not yes or no. Defaulting to no.");
     }
     return false;
+  }
+  
+  // OUTPUT METHODS
+  
+  /**
+   * Formats a card to be colorful if ANSI is on
+   */
+  private static String colorCard(Card card) {
+    String out = "";
+    if (ANSI) { out += ANSI_COL(card.getScolor()); }
+    out += card;
+    return out;
+  }
+  
+  /**
+   * @param from - player who's logging turn
+   * @param draw - 0: no draw; 1: drawn; 2: failed draw
+   * @param play - card played
+   */
+  public static void logTurn(Player from, int draw, Card play) {
+    String out = "";
+    out += from.getIsBot()? from: "You";
+    if (ANSI) { out += ANSI_DIM; }
+    out += " ";
+    if (draw == 2) {
+      out += from.getIsBot()? "passes": "pass";
+      out += ". There are no more cards to draw.";
+    } else {
+      if (draw == 1) {
+        out += from.getIsBot()? "draws": "draw";
+        if (play == null) {
+          out += " a card";
+        } else {
+          out += " and ";
+        }
+      }
+      if (play != null) {
+        out += from.getIsBot()? "plays": "play";
+        out += " ";
+        if (ANSI) { out += ANSI_NORM; }
+        out += colorCard(play);
+        if (ANSI) {
+          out += ANSI_DIM;
+        }
+        if (play.getScolor() == 'w') {
+          out += ", and ";
+          out += from.getIsBot()? "changes": "change";
+          out += " the color to ";
+          if (ANSI) {
+            out += ANSI_NORM;
+            out += ANSI_COL(play.getMetaSColor());
+          }
+          out += Card.longifyColor(play.getMetaSColor()).toLowerCase();
+          if (ANSI) {
+            out += ANSI_DIM;
+          }
+        }
+      }
+      if (from.getHandSize() == 1) {
+        out += ", and ";
+        out += from.getIsBot()? "calls": "call";
+        out += " ";
+        if (ANSI) {
+          out += ANSI_BOLD;
+        }
+        out += "UNO!";
+      } else {
+        if (ANSI) { out += ANSI_DIM;}
+        out += ".";
+      }
+    }
+    if (ANSI) { out += ANSI_NORM; }
+    System.out.println(out);
+  }
+  
+  /**
+   * @param msg - system message
+   */
+  public static void log(String msg) {
+    String out = "";
+    if (ANSI) { out += ANSI_DIM; }
+    out += msg;
+    if (ANSI) { out += ANSI_NORM; }
+    System.out.println(out);
+  }
+  
+  /**
+   * Log the start of an Uno game
+   * @param first - starting card
+   */
+  public static void logStart(Card first) {
+    String out = "";
+    if (ANSI) { out += ANSI_DIM; }
+    out += "The starting card is ";
+    if (ANSI) { out += ANSI_NORM; }
+    out += colorCard(first);
+    if (ANSI) {
+      out += ANSI_NORM;
+      out += ANSI_DIM;
+    }
+    out += "!";
+    if (ANSI) {out += ANSI_NORM; }
+    System.out.println(out);
+  }
+  
+  /**
+   * Logs the cards in hand (on your turn)
+   * @param hand - hand
+   */
+  public static void logHand(Card[] hand, int handSize) {
+    String out = "";
+    if (ANSI) { out += ANSI_SIDE; }
+    out += "Your turn! Your cards are:\n";
+    for (int i = 0; i < handSize; i++) {
+      out += "  - ";
+      out += colorCard(hand[i]);
+      if (ANSI) { out += ANSI_SIDE; }
+      out += "\n";
+    }
+    if (ANSI) { out += ANSI_NORM; }
+    out += "> ";
+    System.out.print(out);
+  }
+  
+  /**
+   * Ask if player wants to play a drawn card
+   * @param c - drawn card
+   */
+  public static void logPlayDrawn(Card c) {
+    String out = "";
+    if (ANSI) { out += ANSI_SIDE; }
+    out += "You draw a ";
+    out += colorCard(c);
+    if (ANSI) { out += ANSI_SIDE; }
+    out += ". Play it?";
+    if (ANSI) { out += ANSI_NORM; }
+    out += " > ";
+    System.out.print(out);
+  }
+  
+  /**
+   * log when a player is affected by a draw or skip card
+   * @param victim - person's turn who is skipped
+   * @param pain - how many cards they need to draw
+   */
+  public static void logSkip(Player victim, int pain) {
+    String out = "";
+    out += victim.getIsBot()? victim: "You";
+    if (pain == 0) {
+      if (ANSI) { out += ANSI_DIM; }
+      out += victim.getIsBot()? "'s": "r";
+      out += " turn is ";
+      if (ANSI) { out += ANSI_NORM; }
+      out += "skipped";
+      if (ANSI) { out += ANSI_DIM; }
+      out += ".";
+    } else {
+      out += " ";
+      out += victim.getIsBot()? "draws": "draw";
+      out += " ";
+      out += "" + pain;
+      if (ANSI) { out += ANSI_DIM; }
+      out += " cards.";
+    }
+    if (ANSI) { out += ANSI_NORM; }
+    System.out.println(out);
+  }
+  
+  /**
+   * Logs the end of an Uno game
+   * @param winner - who won the game
+   */
+  public static void logWin(Player winner) {
+    String out = "";
+    if (ANSI) { out += ANSI_BOLD; }
+    out += winner;
+    out += " ";
+    out += winner.getIsBot()? "wins": "win";
+    out += "!";
+    if (ANSI) { out += ANSI_NORM; }
+    System.out.println(out);
   }
 }
 
@@ -82,7 +281,7 @@ class Uno {
     
     // starting card
     Card start = draw();
-    System.out.println("The starting card is " + start + "!");
+    Main.logStart(start);
     // starting wild cards have any color
     if (start.getScolor() == 'w') {
       start.withMetaSColor('x');
@@ -111,12 +310,14 @@ class Uno {
       if (lastDiscard.getPreEffect() && lastDiscardTurnsAgo == 1) {
         if (lastDiscard.getSnumber() == 's') {
           skip = true;
-          System.out.println(player.toStringPlural() + " turn is skipped");
+          Main.logSkip(player, 0);
         } else if (lastDiscard.getSnumber() == '+') {
           if (lastDiscard.getScolor() == 'w') {
             player.penalty(4);
+            Main.logSkip(player, 4);
           } else {
             player.penalty(2);
+            Main.logSkip(player, 2);
           }
           skip = true;
         }
@@ -128,11 +329,7 @@ class Uno {
         
         // check if the player won
         if (player.getHandSize() == 0) {
-          if (player.toString().equals("You")) {
-            System.out.println(player + " win!");
-          } else {
-            System.out.println(player + " wins!");
-          }
+          Main.logWin(player);
           break;
         }
         
@@ -142,9 +339,9 @@ class Uno {
           if (lastDiscard.getSnumber() == 'r') {
             isCW = !isCW;
             if (isCW) {
-              System.out.println("Play direction is clockwise!");
+              Main.log("Play direction is clockwise!");
             } else {
-              System.out.println("Play direction is counterclockwise!");
+              Main.log("Play direction is counterclockwise!");
             }
           }
         }
@@ -170,7 +367,7 @@ class Uno {
       if (discardSize == 1) {
         return null;
       }
-      System.out.println("Discard is reshuffled to draw");
+      Main.log("Discard is reshuffled to draw");
       
       // the last discarded card is kept; the other cards are reshuffled
       discardSize--;
@@ -229,7 +426,11 @@ class Player {
     return handSize;
   }
   
-  /** @Override */
+  public boolean getIsBot() {
+    return isBot;
+  }
+  
+  @Override
   public String toString() {
     return name;
   }
@@ -277,11 +478,6 @@ class Player {
   }
   public void penalty(int num) {
     // player draws num cards (from +2 or +4 card)
-    if (name.equals("You")) {
-      System.out.println("You draw " + num + " cards");
-    } else {
-      System.out.println(this + " draws " + num + " cards");
-    }
     for (int i = 0; i < num; i++) {
       draw();
     }
@@ -607,121 +803,49 @@ class Player {
     int playCardI;
     if (isBot) {
       playCardI = botUse();
-      
-      if (playCardI >= 0) {
-        Card playCard = hand[playCardI];
-        play(playCardI);
-        if (playCard.getScolor() == 'w') {
-          String switchColor = playCard.getMetaColor();
-          if (handSize == 1) {
-            System.out.println(this + " plays " + playCard +
-              ", switches the color to " + switchColor + ", and calls UNO!");
-          } else {
-            System.out.println(this + " plays " + playCard +
-              " and switches the color to " + switchColor);
-          }
-        } else {
-          if (handSize == 1) {
-            System.out.println(this + " plays " + playCard + " and calls UNO!");
-          } else {
-            System.out.println(this + " plays " + playCard);
-          }
-        }
-      } else {
-        Card drawnCard = draw();
-        if (drawnCard == null) {
-          System.out.println(this + " passes. There are no more cards to draw.");
-        } else {
-          if (playable(drawnCard)) {
-            Card playCard = hand[handSize - 1];
-            play(handSize - 1);
-            if (playCard.getScolor() == 'w') {
-              playCard.setMetaSColor(botSwitch());
-              String switchColor = playCard.getMetaColor();
-              if (handSize == 1) {
-                System.out.println(this + " draws and plays " + playCard +
-                  ", switches the color to " + switchColor + ", and calls UNO!");
-              } else {
-                System.out.println(this + " draws and plays " + playCard +
-                  " and switches the color to " + switchColor);
-              }
-            } else {
-              if (handSize == 1) {
-                System.out.println(this + " draws and plays " +
-                  playCard + " and calls UNO!");
-              } else {
-                System.out.println(this + " draws and plays " + playCard);
-              }
-            }
-          } else {
-            System.out.println(this + " draws a card");
-          }
-        }
-      }
     } else {
-      System.out.println(toStringPlural() + " turn! " +
-        toStringPlural() + " cards are:");
-      for (int i = 0; i < handSize; i++) {
-        System.out.println("  - " + hand[i]);
-      }
-      System.out.print("> ");
-      playCardI = pInput();
+      Main.logHand(hand, handSize);
       
+      playCardI = pInput();
       if (playCardI >= 0) {
         Card playCard = hand[playCardI];
-        play(playCardI);
         if (playCard.getScolor() == 'w') {
           playCard.setMetaSColor(pSwitch());
-          String switchColor = playCard.getMetaColor();
-          if (handSize == 1) {
-            System.out.println(this + " play " + playCard +
-              ", switch the color to " + switchColor + ", and call UNO!");
-          } else {
-            System.out.println(this + " play " + playCard +
-              " and switch the color to " + switchColor);
-          }
-        } else {
-          if (handSize == 1) {
-            System.out.println(this + " play " + playCard + " and call UNO!");
-          } else {
-            System.out.println(this + " play " + playCard);
+        }
+      }
+    }
+    if (playCardI >= 0) {
+      Card playCard = hand[playCardI];
+      play(playCardI);
+      Main.logTurn(this, 0, playCard);
+    } else {
+      Card drawnCard = draw();
+      if (drawnCard == null) {
+        Main.logTurn(this, 2, null);
+      } else {
+        boolean doPlayIt = false;
+        if (playable(drawnCard)) {
+          doPlayIt = true;
+          if (!isBot) {
+            Main.logPlayDrawn(drawnCard);
+            if (!Main.lnyn()) {
+              doPlayIt = false;
+            }
           }
         }
-      } else {
-        Card drawnCard = draw();
-        if (drawnCard == null) {
-          System.out.println(this + " pass. There are no more cards to draw.");
-        } else {
-          if (playable(drawnCard)) {
-            System.out.print(this + " draw a " + drawnCard +
-              ". Play it? > ");
-            if (Main.lnyn()) {
-              Card playCard = hand[handSize - 1];
-              play(handSize - 1);
-              if (playCard.getScolor() == 'w') {
-                playCard.setMetaSColor(pSwitch());
-                String switchColor = playCard.getMetaColor();
-                if (handSize == 1) {
-                  System.out.println(this + " draw and play " + playCard +
-                    ", switch the color to " + switchColor + ", and call UNO!");
-                } else {
-                  System.out.println(this + " draw and play " + playCard +
-                    " and switch the color to " + switchColor);
-                }
-              } else {
-                if (handSize == 1) {
-                  System.out.println(this + " draw and play " +
-                    playCard + " and call UNO!");
-                } else {
-                  System.out.println(this + " draw and play " + playCard);
-                }
-              }
+        if (doPlayIt) {
+          Card playCard = hand[handSize - 1];
+          if (playCard.getScolor() == 'w') {
+            if (isBot) {
+              playCard.setMetaSColor(botSwitch());
             } else {
-              System.out.println(this + " draw a " + drawnCard);
+              playCard.setMetaSColor(pSwitch());
             }
-          } else {
-            System.out.println(this + " draw a " + drawnCard);
           }
+          play(handSize - 1);
+          Main.logTurn(this, 1, playCard);
+        } else {
+          Main.logTurn(this, 1, null);
         }
       }
     }
@@ -743,11 +867,11 @@ class Card {
   private char metaSColor;
   private String metaColor;
 
-  private static char[] scolors = {'r', 'g', 'b', 'y',};
-  private static String[] colors = {"red", "green", "blue", "yellow"};
+  private static final char[] scolors = {'r', 'g', 'b', 'y',};
+  private static final String[] colors = {"Red", "Green", "Blue", "Yellow"};
   
-  private static char[] snumbers = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', 'r', 's'};
-  private static String[] numbers = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Draw 2", "Reverse", "Skip"};
+  private static final char[] snumbers = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', 'r', 's'};
+  private static final String[] numbers = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Draw 2", "Reverse", "Skip"};
   
   /**
    * @param s - a string with the card's short name
@@ -826,7 +950,7 @@ class Card {
     }
 
     if (c == 'w') {
-      recolor = "wild";
+      recolor = "Wild";
       if (n == '+') {
         renumber = "Draw 4";
       }
@@ -883,7 +1007,7 @@ class Card {
     return postEffect;
   }
   
-  /** @Override */
+  @Override
   public String toString() {
     return name;
   }
@@ -918,37 +1042,88 @@ class Card {
     return recolor + " " + renumber;
   }
   
+  /**
+   * @return a standard deck of 108 Uno cards
+   * (2 of each card per color, 0 of each color, 4 wilds, 4 wild +4s)
+   */
   public static Card[] stdDeck() {
     Card[] cards = new Card[108];
     int numCards = 0;
-    
-    String[] colors = {"r", "b", "g", "y"};
-    String[] numbers = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "r", "s"};
+
     for (int i = 0; i < 4; i++) {
-      cards[numCards] = new Card(colors[i] + "0");
+      cards[numCards] = new Card(scolors[i], '0');
       numCards++;
-      for (int j = 0; j < 12; j++) {
+      for (int j = 1; j < 13; j++) {
         for (int k = 0; k < 2; k++) {
-          cards[numCards] = new Card(colors[i] + numbers[j]);
+          cards[numCards] = new Card(scolors[i], snumbers[j]);
           numCards++;
         }
       }
     }
     for (int i = 0; i < 4; i++) {
-      cards[numCards] = new Card("w");
+      cards[numCards] = new Card('w', ' ');
       numCards++;
-      cards[numCards] = new Card("w+");
+      cards[numCards] = new Card('w', '+');
       numCards++;
     }
     return cards;
   }
   
+  /**
+   * Shuffles an array of cards
+   * @param deck - the cards to shuffle
+   */
   public static void shuffle(Card[] deck) {
     for (int i = deck.length - 1; i >= 0; i--) {
       int swapWith = (int) (i * Math.random());
       Card temp = deck[i];
       deck[i] = deck[swapWith];
       deck[swapWith] = temp;
+    }
+  }
+  
+  public static String longifyColor(char c) {
+    switch (c) {
+      case 'r': return "Red";
+      case 'b': return "Blue";
+      case 'g': return "Green";
+      case 'y': return "Yellow";
+      case 'w': return "Wild";
+      case 'x': return "Any"; // is a starting wild
+      default : return "Unknown";
+    }
+  }
+  
+  public static int intifyColor(char c) {
+    switch (c) {
+      case 'r': return 0;
+      case 'b': return 1;
+      case 'g': return 2;
+      case 'y': return 3;
+      case 'w': return 4;
+      case 'x': return 4; // is a starting wild
+      default : return -1;
+    }
+  }
+  
+  public static char charifyColor(int c) {
+    switch (c) {
+      case 0: return 'r';
+      case 1: return 'b';
+      case 2: return 'g';
+      case 3: return 'y';
+      case 4: return 'w';
+      default: return '\0'; //unset
+    }
+  }
+  
+  public static String longifyNumber(char n) {
+    switch (n) {
+      case '+': return "Draw 2";
+      case 'r': return "Reverse";
+      case 's': return "Skip";
+      case ' ': return null; // is a normal wild
+      default : return "" + n;
     }
   }
 }
