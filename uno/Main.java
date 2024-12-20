@@ -106,7 +106,7 @@ public class Main {
             out += ANSI_NORM;
             out += ANSI_COL(play.getMetaSColor());
           }
-          out += Card.longifyColor(play.getMetaSColor()).toLowerCase();
+          out += Card.stringifyColor(play.getMetaSColor()).toLowerCase();
           if (ANSI) {
             out += ANSI_DIM;
           }
@@ -433,17 +433,6 @@ class Player {
   @Override
   public String toString() {
     return name;
-  }
-  public String toStringPlural() {
-    String toString = toString();
-    if (toString.equals("You")) {
-      toString += "r";
-    } else if (toString.charAt(toString.length() - 1) == 's') {
-      toString += "\'";
-    } else {
-      toString += "\'s";
-    }
-    return toString;
   }
   
   public Card draw() {
@@ -853,76 +842,18 @@ class Player {
 }
 
 class Card {
-  private final String name;
   private final String sname;
 
-  private final String color;
   private final char scolor;
-  private final String number;
   private final char snumber;
 
   private final boolean postEffect;
   private final boolean preEffect;
 
   private char metaSColor;
-  private String metaColor;
 
   private static final char[] scolors = {'r', 'g', 'b', 'y',};
-  private static final String[] colors = {"Red", "Green", "Blue", "Yellow"};
-  
   private static final char[] snumbers = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', 'r', 's'};
-  private static final String[] numbers = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Draw 2", "Reverse", "Skip"};
-  
-  /**
-   * @param s - a string with the card's short name
-   */
-  public Card(String s) {
-    boolean repreEffect = false;
-    boolean repostEffect = false;
-    
-    sname = s;
-    scolor = s.charAt(0);
-    if (scolor == 'r') {
-      color = "red";
-    } else if (scolor == 'b') {
-      color = "blue";
-    } else if (scolor == 'g') {
-      color = "green";
-    } else if (scolor == 'y') {
-      color = "yellow";
-    } else if (scolor == 'w') {
-      color = "wild";
-    } else {
-      color = "" + scolor;
-    }
-    if (s.length() > 1) {
-      snumber = s.charAt(1);
-      if (snumber == '+') {
-        if (scolor == 'w') {
-          number = "draw 4";
-        } else {
-          number = "draw 2";
-        }
-        repreEffect = true;
-      } else if (snumber == 'r') {
-        number = "reverse";
-        repostEffect = true;
-      } else if (snumber == 's') {
-        number = "skip";
-        repreEffect = true;
-      } else {
-        number = "" + snumber;
-      }
-      name = color + " " + number;
-    } else {
-      snumber = ' ';
-      number = "";
-      name = color;
-    }
-
-    postEffect = repostEffect;
-    preEffect = repreEffect;
-  }
   
   /**
    * @param c - color
@@ -932,39 +863,6 @@ class Card {
     this.sname = "" + c + n;
     this.scolor = c;
     this.snumber = n;
-
-    String recolor = "";
-    for (int i = 0; i < scolors.length; i++) {
-      if (scolors[i] == c) {
-        recolor = colors[i];
-        break;
-      }
-    }
-
-    String renumber = "";
-    for (int i = 0; i < snumbers.length; i++) {
-      if (snumbers[i] == n) {
-        renumber = numbers[i];
-        break;
-      }
-    }
-
-    if (c == 'w') {
-      recolor = "Wild";
-      if (n == '+') {
-        renumber = "Draw 4";
-      }
-    }
-
-    color = recolor;
-    number = renumber;
-
-    if (renumber.equals("")) {
-      name = recolor;
-    } else {
-      name = recolor + " " + renumber;
-    }
-
     preEffect = n == '+' || n == 's';
     postEffect = n == 'r';
   }
@@ -972,7 +870,6 @@ class Card {
   public String getSname() {
     return sname;
   }
-  
   public char getScolor() {
     return scolor;
   }
@@ -980,20 +877,11 @@ class Card {
     return snumber;
   }
   
-  public String getMetaColor() {
-    return metaColor;
-  }
   public char getMetaSColor() {
     return metaSColor;
   }
   public Card withMetaSColor(char metaSColor) {
     this.metaSColor = metaSColor;
-    metaColor =
-      metaSColor == 'r'? "red":
-      metaSColor == 'b'? "blue":
-      metaSColor == 'g'? "green":
-      metaSColor == 'y'? "yellow":
-      "" + metaSColor;
     return this;
   }
   public void setMetaSColor(char metaSColor) {
@@ -1009,37 +897,18 @@ class Card {
   
   @Override
   public String toString() {
-    return name;
+    return longifyName(scolor, snumber);
   }
   
   public static String longifyName(char scolor, char snumber) {
-    String recolor = "";
-    for (int i = 0; i < scolors.length; i++) {
-      if (scolors[i] == scolor) {
-        recolor = colors[i];
-        break;
-      }
-    }
-
-    String renumber = "";
-    for (int i = 0; i < snumbers.length; i++) {
-      if (snumbers[i] == snumber) {
-        renumber = numbers[i];
-        break;
-      }
-    }
-
     if (scolor == 'w') {
-      recolor = "wild";
       if (snumber == '+') {
-        renumber = "Draw 4";
+        return "Wild Draw 4";
+      } else {
+        return "Wild";
       }
     }
-
-    if (renumber.equals("")) {
-      return recolor;
-    }
-    return recolor + " " + renumber;
+    return stringifyColor(scolor) + " " + stringifyNumber(snumber);
   }
   
   /**
@@ -1082,7 +951,8 @@ class Card {
     }
   }
   
-  public static String longifyColor(char c) {
+  /** Turn an char color into a string */
+  public static String stringifyColor(char c) {
     switch (c) {
       case 'r': return "Red";
       case 'b': return "Blue";
@@ -1094,6 +964,7 @@ class Card {
     }
   }
   
+  /** Turn a char color into a int */
   public static int intifyColor(char c) {
     switch (c) {
       case 'r': return 0;
@@ -1106,6 +977,7 @@ class Card {
     }
   }
   
+  /** Turn an int color into a char */
   public static char charifyColor(int c) {
     switch (c) {
       case 0: return 'r';
@@ -1117,7 +989,8 @@ class Card {
     }
   }
   
-  public static String longifyNumber(char n) {
+  /** Turn a char number into a string */
+  public static String stringifyNumber(char n) {
     switch (n) {
       case '+': return "Draw 2";
       case 'r': return "Reverse";
