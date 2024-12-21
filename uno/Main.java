@@ -1,8 +1,10 @@
 import java.util.Scanner;
 
 public class Main {
-  private static final boolean ANSI = true;
+  private static final boolean ANSI = true; // color text with ANSI
+  private static final boolean WAIT = true; // delay output (typewriter-style)
   
+  // ANSI settings
   private static final String ANSI_NORM = "\u001B[m";
   // private static final String ANSI_DIM = "\u001B[39;2m";
   private static final String ANSI_DIM = "\u001B[38;5;8m";
@@ -18,6 +20,10 @@ public class Main {
       default : return "";
     }
   }
+  
+  // WAIT settings
+  private static final int WAIT_RATE = 0_050; // amount of delay between letters
+  private static final int WAIT_END = 0_500; // amount of delay after
   
   public static Scanner in = new Scanner(System.in);
   
@@ -57,6 +63,39 @@ public class Main {
   }
   
   // OUTPUT METHODS
+  
+  private static void waitOut(String out) {
+    if (!WAIT) {
+      System.out.println(out);
+      return;
+    }
+    
+    for (int i = 0; i < out.length(); i++) {
+      char c = out.charAt(i);
+      System.out.print(c);
+      if (c != '\u001B') {
+        try {
+          Thread.sleep(WAIT_RATE);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      }
+      while (c != 'm') {
+        i++;
+        if (i >= out.length()) {
+          return;
+        }
+        c = out.charAt(i);
+        System.out.print(c);
+      }
+    }
+    System.out.println();
+    try {
+      Thread.sleep(WAIT_END);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
+  }
   
   /**
    * Formats a card to be colorful if ANSI is on
@@ -126,7 +165,7 @@ public class Main {
       }
     }
     if (ANSI) { out += ANSI_NORM; }
-    System.out.println(out);
+    waitOut(out);
   }
   
   /**
@@ -137,7 +176,7 @@ public class Main {
     if (ANSI) { out += ANSI_DIM; }
     out += msg;
     if (ANSI) { out += ANSI_NORM; }
-    System.out.println(out);
+    waitOut(out);
   }
   
   /**
@@ -156,7 +195,7 @@ public class Main {
     }
     out += "!";
     if (ANSI) {out += ANSI_NORM; }
-    System.out.println(out);
+    waitOut(out);
   }
   
   /**
@@ -175,7 +214,7 @@ public class Main {
     }
     if (ANSI) { out += ANSI_NORM; }
     out += "> ";
-    System.out.print(out);
+    waitOut(out);
   }
   
   /**
@@ -191,7 +230,7 @@ public class Main {
     out += ". Play it?";
     if (ANSI) { out += ANSI_NORM; }
     out += " > ";
-    System.out.print(out);
+    waitOut(out);
   }
   
   /**
@@ -219,7 +258,7 @@ public class Main {
       out += " cards.";
     }
     if (ANSI) { out += ANSI_NORM; }
-    System.out.println(out);
+    waitOut(out);
   }
   
   /**
@@ -234,7 +273,7 @@ public class Main {
     out += winner.getIsBot()? "wins": "win";
     out += "!";
     if (ANSI) { out += ANSI_NORM; }
-    System.out.println(out);
+    waitOut(out);
   }
 }
 
@@ -246,9 +285,11 @@ class Uno {
   private int drawSize;
   
   private Card[] discard;
+  private int discardSize;
   private Card lastDiscard;
   private int lastDiscardTurnsAgo;
-  private int discardSize;
+  private char lastDiscardScolor;
+  private char lastDiscardSnumber;
   
   private int turn;
   private boolean isCW;
@@ -275,6 +316,20 @@ class Uno {
       }
     }
     
+    // start position and rotation
+    turn = (int) (Math.random() * numPlayers);
+    isCW = true;
+    
+    // print play order
+    String out = "";
+    for (int i = 0; i < numPlayers; i++) {
+      out += players[(i + turn) % numPlayers];
+      if (i != numPlayers - 1) {
+        out += " -> ";
+      }
+    }
+    Main.log("Play order is: " + out);
+    
     // discard pile
     discard = new Card[108];
     discardSize = 0;
@@ -284,17 +339,32 @@ class Uno {
     Main.logStart(start);
     // starting wild cards have any color
     if (start.getScolor() == 'w') {
-      start.withMetaSColor('x');
+      start.setMetaSColor('x');
     }
     discard(start);
     
-    // start position and rotation
-    turn = 0;
-    isCW = true;
+    // the starting card has an effect
+    if (lastDiscard.getPostEffect() && lastDiscardTurnsAgo == 0) {
+      // reverse card
+      if (lastDiscard.getSnumber() == 'r') {
+        isCW = !isCW;
+        if (isCW) {
+          Main.log("Play direction is clockwise!");
+        } else {
+          Main.log("Play direction is counterclockwise!");
+        }
+      }
+    }
   }
   
   public Card getLastDiscard() {
     return lastDiscard;
+  }
+  public char getLastDiscardScolor() {
+    return lastDiscardScolor;
+  }
+  public char getLastDiscardSnumber() {
+    return lastDiscardSnumber;
   }
   
   public void play() {
@@ -387,12 +457,24 @@ class Uno {
     drawSize--;
     return draw[drawSize];
   }
+  
+  /**
+   * Discard a card
+   * @param c - card to be discarded
+   */
   public void discard(Card c) {
-    // discard the card
-    lastDiscard = c;
-    lastDiscardTurnsAgo = 0;
     discard[discardSize] = c;
     discardSize++;
+    
+    // update lastDiscard variables
+    lastDiscard = c;
+    lastDiscardTurnsAgo = 0;
+    lastDiscardScolor = c.getScolor();
+    lastDiscardSnumber = c.getSnumber();
+    if (lastDiscardScolor == 'w') {
+      lastDiscardScolor = c.getMetaSColor();
+      lastDiscardSnumber = ' ';
+    }
   }
 }
 
@@ -441,8 +523,11 @@ class Player {
     return name;
   }
   
+  /**
+   * Draw a card
+   * @return the card drawn, <code>null</code> if a card could not be drawn
+   */
   public Card draw() {
-    // draw a card
     Card drawnCard = game.draw();
     // check if a card could not be drawn
     if (drawnCard == null) {
@@ -462,8 +547,11 @@ class Player {
     handSize++;
     return drawnCard;
   }
+  /**
+   * Discard a card
+   * @param cardI - index of card in hand
+   */
   public void play(int cardI) {
-    // discards a card, based on index in hand
     game.discard(hand[cardI]);
     handSize--;
     // shifts cards in hand to remove selected card
@@ -482,47 +570,28 @@ class Player {
     // the bot chooses a card to play
     
     // info about the last card
-    Card lastDiscard = game.getLastDiscard();
-    char lSnumber = lastDiscard.getSnumber();
-    char lScolor = lastDiscard.getScolor();
-    if (lScolor == 'w') {
-      lScolor = lastDiscard.getMetaSColor();
-      lSnumber = ' ';
-    }
-    int lScolorNum =
-      lScolor == 'r'? 0:
-      lScolor == 'b'? 1:
-      lScolor == 'g'? 2:
-      lScolor == 'y'? 3: 4;
+    char lSnumber = game.getLastDiscardSnumber();
+    char lScolor = game.getLastDiscardScolor();
+    int lScolorNum = Card.intifyColor(lScolor);
     
-    // arrays that sort the bot's hand
-    int[] rs = new int[handSize];
-    int rsSize = 0;
-    int[] bs = new int[handSize];
-    int bsSize = 0;
-    int[] gs = new int[handSize];
-    int gsSize = 0;
-    int[] ys = new int[handSize];
-    int ysSize = 0;
+    // new array sorting the bot's hand by color
+    int[][] colorSort = new int[4][handSize];
+    int[] colorSortSize = {0, 0, 0, 0,};
+    
     // indexes of wild cards
     int w = -1;
     int wplus = -1;
     
     // sort cards into arrays
     for (int i = 0; i < handSize; i++) {
-      if (hand[i].getScolor() == 'r') {
-        rs[rsSize] = i;
-        rsSize++;
-      } else if (hand[i].getScolor() == 'b') {
-        bs[bsSize] = i;
-        bsSize++;
-      } else if (hand[i].getScolor() == 'g') {
-        gs[gsSize] = i;
-        gsSize++;
-      } else if (hand[i].getScolor() == 'y') {
-        ys[ysSize] = i;
-        ysSize++;
-      } else if (hand[i].getScolor() == 'w') {
+      for (int j = 0; j < Card.scolors.length; j++) {
+        if (hand[i].getScolor() == Card.scolors[j]) {
+          colorSort[j][colorSortSize[j]] = i;
+          colorSortSize[j]++;
+          break;
+        }
+      }
+      if (hand[i].getScolor() == 'w') {
         // set wild indexes
         if (hand[i].getSnumber() == '+') {
           wplus = i;
@@ -532,16 +601,13 @@ class Player {
       }
     }
     
-    // new array for all sorted cards
-    int[][] colorSort = {rs, bs, gs, ys,};
-    int[] colorSortSize = {rsSize, bsSize, gsSize, ysSize,};
     
     // sort the colors based on amount of cards of that color
     int[] colorSortSizeSort = {-1, -1, -1, -1};
     for (int i = 0; i < 4; i++) {
       int j = 0;
       while (colorSortSizeSort[j] != -1 &&
-        colorSortSize[colorSortSizeSort[j]] > colorSortSize[i]) {
+            colorSortSize[colorSortSizeSort[j]] > colorSortSize[i]) {
         j++;
       }
       for (int k = i; k > j; k--) {
@@ -574,7 +640,7 @@ class Player {
     }
     
     // preferred color (for switching)
-    char switchColor = new char[]{'r', 'b', 'g', 'y',}[colorSortSizeSort[0]];
+    char switchColor = Card.scolors[colorSortSizeSort[0]];
     // use a wild, if possible
     if (w >= 0) {
       hand[w].setMetaSColor(switchColor);
@@ -638,13 +704,8 @@ class Player {
     // is a card playable?
     
     // get last card info
-    Card lastDiscard = game.getLastDiscard();
-    char lScolor = lastDiscard.getScolor();
-    char lSnumber = lastDiscard.getSnumber();
-    if (lScolor == 'w') {
-      lScolor = lastDiscard.getMetaSColor();
-      lSnumber = ' ';
-    }
+    char lSnumber = game.getLastDiscardSnumber();
+    char lScolor = game.getLastDiscardScolor();
     
     // wilds can be played
     if (c.getScolor() == 'w') {
@@ -883,8 +944,8 @@ class Card {
 
   private char metaSColor;
 
-  private static final char[] scolors = {'r', 'g', 'b', 'y',};
-  private static final char[] snumbers = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', 'r', 's'};
+  static final char[] scolors = {'r', 'g', 'b', 'y',};
+  static final char[] snumbers = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', 'r', 's'};
   
   /**
    * @param c - color
@@ -911,12 +972,8 @@ class Card {
   public char getMetaSColor() {
     return metaSColor;
   }
-  public Card withMetaSColor(char metaSColor) {
-    this.metaSColor = metaSColor;
-    return this;
-  }
   public void setMetaSColor(char metaSColor) {
-    this.withMetaSColor(metaSColor);
+    this.metaSColor = metaSColor;
   }
   
   public boolean getPreEffect() {
@@ -944,7 +1001,7 @@ class Card {
   
   /**
    * @return a standard deck of 108 Uno cards
-   * (2 of each card per color, 0 of each color, 4 wilds, 4 wild +4s)
+   * <p>(2 of each card per color, 0 of each color, 4 wilds, 4 wild +4s)
    */
   public static Card[] stdDeck() {
     Card[] cards = new Card[108];
