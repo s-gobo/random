@@ -11,41 +11,22 @@ const romToNum = function(rom) {
   for (let place = ones.length - 1; i < rom.length; place--) {
     if (place < 0) {
       return -1;
+    } else if (ones.length > place + 1 && rom.slice(i, i + 2) === ones[place] + ones[place + 1]) { // IX
+      re += 9 * 10 ** place;
+      i += 2;
+      continue;
+    } else if (fives.length > place && rom[i] === fives[place]) { // V, VI, VII, VIII
+      re += 5 * 10 ** place;
+      i++;
+    } else if (fives.length > place && rom.slice(i, i + 2) === ones[place] + fives[place]){ // IV
+      re += 4 * 10 ** place;
+      i += 2;
+      continue;
     }
-    let placeStr = "";
-    while (rom[i] === ones[place] || // ones
-      fives.length > place && rom[i] === fives[place] || // fives
-      ones.length > place + 1 && rom[i] === ones[place + 1] // tens
-    ) {
-      placeStr += rom[i];
+    for (let j = 0; j < 3 && rom[i] === ones[place]; j++) { //III
+      re += 10 ** place;
       i++;
     }
-    
-    if (ones.length > place + 1 && placeStr.includes(ones[place + 1])) { // tens
-      if (placeStr === ones[place] + ones[place + 1]) { // IX
-        re += 9 * 10 ** place;
-        continue;
-      }
-      return -1;
-    }
-    if (fives.length > place && placeStr.includes(fives[place])) { // fives
-      if (placeStr[0] === fives[place]) { // V, VI, VII, VIII
-        re += 5 * 10 ** place;
-        placeStr = placeStr.substring(1);
-        if (placeStr.includes(fives[place])) { // VV
-          return -1;
-        }
-      } else if (placeStr === ones[place] + fives[place]){ // IV
-        re += 4 * 10 ** place;
-        continue;
-      } else {
-        return -1;
-      }
-    }
-    if (placeStr.length > 3) { // IIII
-      return -1;
-    }
-    re += placeStr.length * 10 ** place; // ones
   }
   
   return re;
