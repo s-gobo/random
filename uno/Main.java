@@ -22,7 +22,7 @@ public class Main {
   }
   
   // WAIT settings
-  private static final int WAIT_RATE = 0_050; // amount of delay between letters
+  private static final int WAIT_RATE = 0_030; // amount of delay between letters
   private static final int WAIT_END = 0_500; // amount of delay after
   
   public static Scanner in = new Scanner(System.in);
@@ -64,36 +64,52 @@ public class Main {
   
   // OUTPUT METHODS
   
+  private static void waitOutln(String out) {
+    waitOut(out + "\n");
+  }
+  
   private static void waitOut(String out) {
     if (!WAIT) {
-      System.out.println(out);
+      System.out.print(out);
       return;
     }
     
+    // number of '\n's at the end of the string
+    int lines = 0;
+    while (out.charAt(out.length() - 1 - lines) == '\n') {
+      lines++;
+    }
+    out = out.substring(0, out.length() - lines);
+    
     for (int i = 0; i < out.length(); i++) {
       char c = out.charAt(i);
-      System.out.print(c);
-      if (c != '\u001B') {
+      if (c == '\u001B') {
+        String ansi = "\u001B";
+        while (c != 'm') {
+          i++;
+          if (i >= out.length()) {
+            break;
+          }
+          c = out.charAt(i);
+          ansi += c;
+        }
+        System.out.print(ansi);
+      } else {
+        System.out.print(c);
         try {
           Thread.sleep(WAIT_RATE);
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
         }
       }
-      while (c != 'm') {
-        i++;
-        if (i >= out.length()) {
-          return;
-        }
-        c = out.charAt(i);
-        System.out.print(c);
-      }
     }
-    System.out.println();
     try {
       Thread.sleep(WAIT_END);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
+    }
+    for (int i = 0; i < lines; i++) {
+      System.out.println();
     }
   }
   
@@ -165,7 +181,7 @@ public class Main {
       }
     }
     if (ANSI) { out += ANSI_NORM; }
-    waitOut(out);
+    waitOutln(out);
   }
   
   /**
@@ -176,7 +192,7 @@ public class Main {
     if (ANSI) { out += ANSI_DIM; }
     out += msg;
     if (ANSI) { out += ANSI_NORM; }
-    waitOut(out);
+    waitOutln(out);
   }
   
   /**
@@ -195,7 +211,7 @@ public class Main {
     }
     out += "!";
     if (ANSI) {out += ANSI_NORM; }
-    waitOut(out);
+    waitOutln(out);
   }
   
   /**
@@ -258,7 +274,7 @@ public class Main {
       out += " cards.";
     }
     if (ANSI) { out += ANSI_NORM; }
-    waitOut(out);
+    waitOutln(out);
   }
   
   /**
@@ -273,7 +289,7 @@ public class Main {
     out += winner.getIsBot()? "wins": "win";
     out += "!";
     if (ANSI) { out += ANSI_NORM; }
-    waitOut(out);
+    waitOutln(out);
   }
 }
 
@@ -944,7 +960,7 @@ class Card {
 
   private char metaSColor;
 
-  static final char[] scolors = {'r', 'g', 'b', 'y',};
+  static final char[] scolors = {'r', 'b', 'g', 'y',};
   static final char[] snumbers = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', 'r', 's'};
   
   /**
