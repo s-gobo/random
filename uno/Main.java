@@ -234,6 +234,31 @@ public class Main {
   }
   
   /**
+   * Log that input error occurred
+   * @param str - message
+   */
+  public static void logSide(String str) {
+    String out = "";
+    if (ANSI) { out += ANSI_SIDE; }
+    out += str;
+    if (ANSI) { out += ANSI_NORM; }
+    waitOutln(out);
+  }
+  
+  /**
+   * Ask for user input
+   * @param str - message
+   */
+  public static void logAsk(String str) {
+    String out = "";
+    if (ANSI) { out += ANSI_SIDE; }
+    out += str;
+    if (ANSI) { out += ANSI_NORM; }
+    out += "> ";
+    waitOut(out);
+  }
+  
+  /**
    * Ask if player wants to play a drawn card
    * @param c - drawn card
    */
@@ -495,7 +520,8 @@ class Uno {
 }
 
 class Player {
-  private static final boolean COMPUTER_ALIAS = true;
+  private static final boolean COMPUTER_ALIAS = true; // give bots names
+  private static final boolean VALIDIFY = true; // player input has to be valid or player is asked again
   
   private boolean isBot;
   private String name;
@@ -582,7 +608,7 @@ class Player {
     }
   }
   
-  public int botUse() {
+  private int botUse() {
     // the bot chooses a card to play
     
     // info about the last card
@@ -600,8 +626,8 @@ class Player {
     
     // sort cards into arrays
     for (int i = 0; i < handSize; i++) {
-      for (int j = 0; j < Card.scolors.length; j++) {
-        if (hand[i].getScolor() == Card.scolors[j]) {
+      for (int j = 0; j < 4; j++) {
+        if (hand[i].getScolor() == Card.charifyColor(j)) {
           colorSort[j][colorSortSize[j]] = i;
           colorSortSize[j]++;
           break;
@@ -656,7 +682,7 @@ class Player {
     }
     
     // preferred color (for switching)
-    char switchColor = Card.scolors[colorSortSizeSort[0]];
+    char switchColor = Card.charifyColor(colorSortSizeSort[0]);
     // use a wild, if possible
     if (w >= 0) {
       hand[w].setMetaSColor(switchColor);
@@ -671,7 +697,7 @@ class Player {
     // no card possible, draw a card
     return -1;
   }
-  public char botSwitch() {
+  private char botSwitch() {
     // get the bot's preferred color (copy of portion of above method)
     
     int[] rs = new int[handSize];
@@ -716,7 +742,7 @@ class Player {
     
     return new char[]{'r', 'b', 'g', 'y',}[colorSortSizeSort[0]];
   }
-  public boolean playable(Card c) {
+  private boolean playable(Card c) {
     // is a card playable?
     
     // get last card info
@@ -727,6 +753,7 @@ class Player {
     if (c.getScolor() == 'w') {
       /* wild draw fours cannot be played if another card can
        * (bot would pick the other card)
+       * XXX should be no color match, num matches are fine
        */
       if (c.getSnumber() == '+' && !hand[botUse()].getSname().equals("w+")) {
         return false;
@@ -745,7 +772,7 @@ class Player {
     // can't be played
     return false;
   }
-  public int cardSuch(char scolor, char snumber) {
+  private int cardSuch(char scolor, char snumber) {
     // there's a card in the hand with the color and number
     for (int i = 0; i < handSize; i++) {
       Card card = hand[i];
@@ -757,14 +784,50 @@ class Player {
     // no
     return -1;
   }
-  public int pInput() {
+  
+  private int playerUse() {
+    do {
+      int re = pInput();
+      String out = "";
+      if (re == -2) {
+        out += "No input entered.";
+      } else if (re <= -3 && re >= -5) {
+        out += "Card not recognized.";
+      } else if (re == -6) {
+        out += "You don't have that card.";
+      } else if (re == -7) {
+        out += "You cannot use that card right now.";
+      } else {
+        return re;
+      }
+      if (VALIDIFY) {
+        out += " Enter a card or type \"draw\".\n";
+        Main.logAsk(out);
+      } else {
+        out += " Defaulting to draw.";
+        Main.logSide(out);
+        return -1;
+      }
+    } while (true);
+  }
+  /**
+   * Get a player's input once
+   * @return card index in hand to choose from, or:
+   * <p>-1 - chose to draw
+   * <p>-2 - nothing entered
+   * <p>-3 - color not recognized
+   * <p>-4 - number not recognized
+   * <p>-5 - color/number combo doesn't exist
+   * <p>-6 - you don't have that card
+   * <p>-7 - you can't use that card
+   */
+  private int pInput() {
     // get player input on their turn
     String inputStr = Main.ln().toLowerCase();
     
     // nothing is entered
     if (inputStr.length() == 0) {
-      System.out.println("No card entered. Defaulting to draw.");
-      return -1;
+      return -2;
     }
     
     char pColor = inputStr.charAt(0);
@@ -782,8 +845,7 @@ class Player {
     }
     // no color found
     if (!isFound) {
-      System.out.println("Card not recognized. Defaulting to draw.");
-      return -1;
+      return -3;
     }
     
     // find number
@@ -834,40 +896,76 @@ class Player {
     // wild card
     if (pColor == 'w') {
       if (pNumber != ' ' && pNumber != '+') {
-        System.out.println(Card.longifyName(pColor, pNumber) +
-          " is not a card. Defaulting to draw.");
-        return -1;
+        // wild has a number
+        return -5;
       }
     } else if (!isFound) {
       // unrecognized number
-      System.out.println("Card not recognized. Defaulting to draw.");
-      return -1;
+      return -4;
     }
     
     // get that card's index in hand
     int re = cardSuch(pColor, pNumber);
     if (re == -1) {
-      System.out.println("You don't have a " + Card.longifyName(pColor, pNumber) +
-        ". Defualting to draw.");
-      return -1;
+      return -6;
     }
     // can you play that card?
     if (!playable(hand[re])) {
-      System.out.println(Card.longifyName(pColor, pNumber) +
-        " can't be played right now. Defaulting to draw.");
-      return -1;
+      return -7;
     }
     return re;
   }
-  public char pSwitch() {
-    // ask the player to switch the color
-    System.out.print("Switch the color to > ");
-    char re = Main.ln("red").toLowerCase().charAt(0);
-    if (re != 'r' && re != 'b' && re != 'g' && re != 'y') {
-      System.out.println("Not a color. Defaulting to red.");
-      re = 'r';
-    }
-    return re;
+  
+  /**
+   * Ask the player to switch the color
+   * @return the color to switch to
+   */
+  private char pSwitch() {
+    Main.logAsk("Switch the color to ");
+    do {
+      String out = "";
+      String in = Main.ln();
+      if (in.length() == 0) {
+        out += "No input entered.";
+      } else {
+        char re = in.toLowerCase().charAt(0);
+        if (re == 'r' || re == 'b' || re == 'g' || re == 'y') {
+          return re;
+        } else {
+          out += "Not a color.";
+        }
+      }
+      if (VALIDIFY) {
+        out += " Please enter a color. ";
+        Main.logAsk(out);
+      } else {
+        out += " Defaulting to red.";
+        Main.logSide(out);
+        return 'r';
+      }
+    } while (true);
+  }
+  private boolean pPlayDrawn() {
+    do {
+      String out = "";
+      String in = Main.ln();
+      if (in.length() == 0) {
+        out += "No input entered. ";
+      } else {
+        char re = in.charAt(0);
+        if (re == 'y' || re == 'n') {
+          return re == 'y';
+        }
+      }
+      if (VALIDIFY) {
+        out += "Please enter \"yes\" or \"no\". ";
+        Main.logAsk(out);
+      } else {
+        out += " Defaulting to no.";
+        Main.logSide(out);
+        return false;
+      }
+    } while (true);
   }
   
   public void turn() {
@@ -878,7 +976,7 @@ class Player {
     } else {
       Main.logHand(hand, handSize);
       
-      playCardI = pInput();
+      playCardI = playerUse();
       if (playCardI >= 0) {
         Card playCard = hand[playCardI];
         if (playCard.getScolor() == 'w') {
@@ -900,7 +998,7 @@ class Player {
           doPlayIt = true;
           if (!isBot) {
             Main.logPlayDrawn(drawnCard);
-            if (!Main.lnyn()) {
+            if (!pPlayDrawn()) {
               doPlayIt = false;
             }
           }
@@ -960,8 +1058,8 @@ class Card {
 
   private char metaSColor;
 
-  static final char[] scolors = {'r', 'b', 'g', 'y',};
-  static final char[] snumbers = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', 'r', 's'};
+  private static final char[] scolors = {'r', 'b', 'g', 'y',};
+  private static final char[] snumbers = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', 'r', 's'};
   
   /**
    * @param c - color
