@@ -100,7 +100,7 @@ main: while (i != 9 && j != 9) {
   // match cage
   if (cageNum !== cages.length) {
     for (let k = 0; k < cageCell; k++) {
-      if (board[cage[k][0]][cage[k][1]] === board[i, j]) {
+      if (board[cage[k][0]][cage[k][1]] === board[i][j]) {
         continue main;
       }
     }
